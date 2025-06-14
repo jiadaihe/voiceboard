@@ -1,7 +1,6 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai.agents.agent_builder.base_agent import BaseAgent
-from crewai_tools import SerperDevTool, ScrapeWebsiteTool, WebsiteSearchTool
 
 
 @CrewBase
@@ -11,25 +10,20 @@ class Voiceboard:
     tasks_config = 'config/tasks.yaml'
 
     def __init__(self) -> None:
-        # Initialize tools that will be used by agents
-        self.search_tool = SerperDevTool()
-        self.scrape_tool = ScrapeWebsiteTool()
-        self.website_search = WebsiteSearchTool()
+        pass
 
     @agent
     def persona_identifier(self) -> Agent:
         return Agent(
             config=self.agents_config['persona_identifier'], # type: ignore[index]
-            verbose=True,
-            tools=[self.search_tool, self.scrape_tool]
+            verbose=True
         )
 
     @agent
     def voice_researcher(self) -> Agent:
         return Agent(
             config=self.agents_config['voice_researcher'], # type: ignore[index]
-            verbose=True,
-            tools=[self.search_tool, self.scrape_tool, self.website_search]
+            verbose=True
         )
 
     @agent

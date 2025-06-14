@@ -21,38 +21,56 @@ def interactive():
             return
             
         print(f"\n🔍 Analyzing your idea: {startup_idea}")
-        print("⏳ Finding critical personas and researching their voices...")
+        print("⏳ Getting initial feedback from all personas...")
         
-        # Initialize Voiceboard and run setup
+        # Initialize Voiceboard
         voiceboard = Voiceboard()
-        setup_result = voiceboard.run_initial_setup(startup_idea)
         
-        print("\n✅ Research complete! Here are critical personas who can evaluate your idea:")
-        
-        # Show available personas (in production, you'd parse the actual JSON results)
-        print("\n👥 Available Critical Personas:")
-        print("1. Kevin O'Leary - Direct, money-focused investor feedback")
-        print("2. Barbara Corcoran - Market reality and execution challenges") 
-        print("3. Mark Cuban - Scalability and competitive analysis")
-        print("4. Reid Hoffman - Network effects and platform strategy")
-        print("5. Sara Blakely - Customer validation and bootstrapping")
-        
-        # Get persona selection
-        persona_choice = input("\n🎯 Select a persona (1-5): ")
-        persona_map = {
-            "1": "Kevin O'Leary",
-            "2": "Barbara Corcoran", 
-            "3": "Mark Cuban",
-            "4": "Reid Hoffman",
-            "5": "Sara Blakely"
+        # Define our personas
+        personas = {
+            "1": "VC Bro",
+            "2": "Elon Musk",
+            "3": "Karen CEO",
+            "4": "Crypto Chad",
+            "5": "AI Guru"
         }
         
-        selected_persona = persona_map.get(persona_choice, "Kevin O'Leary")
-        print(f"\n🗣️  You're now talking to: {selected_persona}")
+        # Get initial feedback from all personas
+        print("\n👥 Initial Feedback from All Personas:")
+        print("="*65)
+        
+        initial_responses = {}
+        for num, persona in personas.items():
+            print(f"\n🎙️  {persona}'s Initial Thoughts:")
+            try:
+                response = voiceboard.run_conversation(
+                    selected_persona_name=persona,
+                    user_message=startup_idea,
+                    startup_idea=startup_idea
+                )
+                print(f"{response.raw}\n")
+                initial_responses[persona] = response.raw
+            except Exception as e:
+                print(f"❌ Error getting response from {persona}: {e}")
+                continue
+        
+        # Let user select a persona for deeper conversation
+        print("\n🎯 Select a persona to continue the conversation:")
+        for num, persona in personas.items():
+            print(f"{num}. {persona}")
+        
+        while True:
+            persona_choice = input("\nSelect a persona (1-5): ")
+            if persona_choice in personas:
+                selected_persona = personas[persona_choice]
+                break
+            print("❌ Invalid choice. Please select 1-5.")
+        
+        print(f"\n🗣️  You're now in a deeper conversation with: {selected_persona}")
         print("💡 Tip: They will give you honest, critical feedback - not validation!")
         
         # Start conversation loop
-        conversation_history = ""
+        conversation_history = f"User: {startup_idea}\n{selected_persona}: {initial_responses[selected_persona]}\n"
         
         while True:
             user_message = input(f"\n💬 Your message to {selected_persona} (or 'quit' to exit): ")
@@ -67,19 +85,11 @@ def interactive():
             print(f"\n⏳ {selected_persona} is thinking...")
             
             try:
-                # Run conversation
-                if not conversation_history:
-                    response = voiceboard.run_conversation(
-                        selected_persona_name=selected_persona, 
-                        user_message=user_message,
-                        startup_idea=startup_idea
-                    )
-                else:
-                    response = voiceboard.run_followup(
-                        selected_persona_name=selected_persona, 
-                        user_response=user_message, 
-                        conversation_history=conversation_history
-                    )
+                response = voiceboard.run_followup(
+                    selected_persona_name=selected_persona, 
+                    user_response=user_message, 
+                    conversation_history=conversation_history
+                )
                 
                 print(f"\n🎙️  {selected_persona}: {response.raw}")
                 
