@@ -1,0 +1,1463 @@
+'use client';
+
+import * as React from "react";
+import { cn } from '@/lib/utils';
+import { ScrollAreaProps } from '@radix-ui/react-scroll-area';
+import { Share2 } from 'lucide-react'; // Added for share button icon
+import { balloons, textBalloons } from "balloons-js"; // Import balloons.js functions
+import html2canvas from 'html2canvas'; // Import html2canvas
+import {
+  type HTMLMotionProps,
+  motion,
+  useMotionValue,
+  useSpring,
+} from 'framer-motion';
+
+// Custom component implementations (as per requirement 2)
+// cn function (from '@/lib/utils')
+type ClassValue = string | number | ClassDictionary | ClassArray | undefined | null | boolean;
+type ClassDictionary = { [key: string]: any };
+type ClassArray = ClassValue[];
+
+function cn(...inputs: ClassValue[]) {
+  const classes: string[] = [];
+  for (let i = 0; i < inputs.length; i++) {
+    const input = inputs[i];
+    if (input) {
+      if (typeof input === 'string' || typeof input === 'number') {
+        classes.push(String(input));
+      } else if (Array.isArray(input)) {
+        const inner = cn(...input);
+        if (inner) {
+          classes.push(inner);
+        }
+      } else if (typeof input === 'object') {
+        for (const key in input) {
+          if (Object.prototype.hasOwnProperty.call(input, key) && (input as ClassDictionary)[key]) {
+            classes.push(key);
+          }
+        }
+      }
+    }
+  }
+  return classes.join(' ');
+}
+
+// ScrollArea and ScrollBar (from '@/components/ui/scroll-area')
+// This is a simplified implementation for demonstration.
+// In a real shadcn/ui setup, these would be imported from their respective files.
+// For this exercise, we're providing a basic functional equivalent.
+interface ScrollAreaComponentProps extends React.ComponentPropsWithoutRef<'div'> {
+  orientation?: "vertical" | "horizontal";
+}
+
+const ScrollArea = React.forwardRef<
+  HTMLDivElement,
+  ScrollAreaComponentProps
+>(({ className, children, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("relative overflow-hidden", className)}
+    {...props}
+  >
+    <div className="h-full w-full rounded-[inherit]">
+      <div className="h-full w-full">{children}</div>
+    </div>
+    <ScrollBar />
+  </div>
+));
+ScrollArea.displayName = "ScrollArea";
+
+const ScrollBar = React.forwardRef<
+  HTMLDivElement,
+  ScrollAreaComponentProps
+>(({ className, orientation = "vertical", ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "flex touch-none select-none transition-colors",
+      orientation === "vertical" &&
+        "h-full w-2.5 border-l border-l-transparent p-[1px]",
+      orientation === "horizontal" &&
+        "h-2.5 flex-col border-t border-t-transparent p-[1px]",
+      className
+    )}
+    {...props}
+  >
+    <div
+      className={cn(
+        "relative rounded-full bg-border",
+        orientation === "vertical" && "flex-1",
+        orientation === "horizontal" && "h-full flex-1"
+      )}
+    />
+  </div>
+));
+ScrollBar.displayName = "ScrollBar";
+
+// Textarea (from '@/components/ui/textarea')
+const Textarea = React.forwardRef<
+  HTMLTextAreaElement,
+  React.TextareaHTMLAttributes<HTMLTextAreaElement>
+>(({ className, ...props }, ref) => {
+  return (
+    <textarea
+      className={cn(
+        "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
+      ref={ref}
+      {...props}
+    />
+  )
+})
+Textarea.displayName = "Textarea"
+
+// Avatar and AvatarFallback (from '@/components/ui/avatar')
+interface AvatarProps extends React.ComponentPropsWithoutRef<'div'> {}
+interface AvatarFallbackProps extends React.ComponentPropsWithoutRef<'div'> {}
+
+const Avatar = React.forwardRef<
+  HTMLDivElement,
+  AvatarProps
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
+      className
+    )}
+    {...props}
+  />
+));
+Avatar.displayName = "Avatar";
+
+const AvatarFallback = React.forwardRef<
+  HTMLDivElement,
+  AvatarFallbackProps
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "flex h-full w-full items-center justify-center rounded-full bg-muted",
+      className
+    )}
+    {...props}
+  />
+));
+AvatarFallback.displayName = "AvatarFallback";
+
+
+interface XScrollProps extends ScrollAreaProps {}
+
+function XScroll({ children, className, ...props }: XScrollProps) {
+  return (
+    <div className="flex">
+      <ScrollArea className={cn('w-1 flex-1', className)} {...props}>
+        {children}
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+    </div>
+  );
+}
+
+interface GradientHeadingProps {
+  children: React.ReactNode;
+  className?: string;
+  size?: "default" | "xxs" | "xs" | "sm" | "md" | "lg" | "xl" | "xxl" | "xxxl";
+  weight?: "default" | "thin" | "base" | "semi" | "bold" | "black";
+}
+
+function GradientHeading({ 
+  children, 
+  className, 
+  size = "default", 
+  weight = "default" 
+}: GradientHeadingProps) {
+  const sizeClasses = {
+    default: "text-2xl sm:text-3xl lg:text-4xl",
+    xxs: "text-base sm:text-lg lg:text-lg",
+    xs: "text-lg sm:text-xl lg:text-2xl",
+    sm: "text-xl sm:text-2xl lg:text-3xl",
+    md: "text-2xl sm:text-3xl lg:text-4xl",
+    lg: "text-3xl sm:text-4xl lg:text-5xl",
+    xl: "text-4xl sm:text-5xl lg:text-6xl",
+    xxl: "text-5xl sm:text-6xl lg:text-[6rem]",
+    xxxl: "text-5xl sm:text-6xl lg:text-[8rem]",
+  };
+
+  const weightClasses = {
+    default: "font-bold",
+    thin: "font-thin",
+    base: "font-base",
+    semi: "font-semibold",
+    bold: "font-bold",
+    black: "font-black",
+  };
+
+  return (
+    <h1 className={className}>
+      <span className={cn(
+        "tracking-tight pb-3 bg-clip-text text-transparent bg-gradient-to-t from-neutral-700 to-neutral-800 dark:from-stone-200 dark:to-neutral-200",
+        sizeClasses[size],
+        weightClasses[weight]
+      )}>
+        {children}
+      </span>
+    </h1>
+  );
+}
+
+interface CartoonButtonProps {
+  label: string;
+  color?: string;
+  hasHighlight?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+  className?: string;
+  icon?: React.ReactNode; // Added icon prop
+}
+
+function CartoonButton({
+  label,
+  color = 'bg-orange-400',
+  hasHighlight = true,
+  disabled = false,
+  onClick,
+  className,
+  icon, // Destructure icon
+}: CartoonButtonProps) {
+  const handleClick = () => {
+    if (disabled) return;
+    onClick?.();
+  };
+
+  return (
+    <div
+      className={cn(
+        `inline-block ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`,
+        className
+      )}
+    >
+      <button
+        disabled={disabled}
+        onClick={handleClick}
+        className={`relative h-12 px-6 text-xl rounded-full font-bold text-neutral-800 border-2 border-neutral-800 transition-all duration-150 overflow-hidden group
+        ${color} hover:shadow-[0_4px_0_0_#262626]
+        ${disabled ? 'opacity-50 pointer-events-none' : 'hover:-translate-y-1 active:translate-y-0 active:shadow-none'}`}
+      >
+        <span className="relative z-10 whitespace-nowrap flex items-center gap-2">
+          {icon && <span className="text-2xl">{icon}</span>} {/* Render icon */}
+          {label}
+        </span>
+        {hasHighlight && !disabled && (
+          <div className="absolute top-1/2 left-[-100%] w-16 h-24 bg-white/50 -translate-y-1/2 rotate-12 transition-all duration-500 ease-in-out group-hover:left-[200%]"></div>
+        )}
+      </button>
+    </div>
+  );
+}
+
+export interface BalloonsProps {
+  type?: "default" | "text"
+  text?: string
+  fontSize?: number
+  color?: string
+  className?: string
+  onLaunch?: () => void
+}
+
+const Balloons = React.forwardRef<HTMLDivElement & { launchAnimation: () => void }, BalloonsProps>(
+  ({ type = "default", text, fontSize = 120, color = "#000000", className, onLaunch }, ref) => {
+    const containerRef = React.useRef<HTMLDivElement>(null)
+    
+    const launchAnimation = React.useCallback(() => {
+      if (type === "default") {
+        balloons()
+      } else if (type === "text" && text) {
+        textBalloons([
+          {
+            text,
+            fontSize,
+            color,
+          },
+        ])
+      }
+      
+      if (onLaunch) {
+        onLaunch()
+      }
+    }, [type, text, fontSize, color, onLaunch])
+
+    // Export the launchAnimation method
+    React.useImperativeHandle(ref, () => ({
+      launchAnimation,
+      ...(containerRef.current || {})
+    }), [launchAnimation])
+
+    return <div ref={containerRef} className={cn("balloons-container", className)} />
+  }
+)
+Balloons.displayName = "Balloons"
+
+const generateSpringPath = (
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  springConfig: {
+    coilCount?: number;
+    amplitudeMin?: number;
+    amplitudeMax?: number;
+    curveRatioMin?: number;
+    curveRatioMax?: number;
+    bezierOffset?: number;
+  } = {},
+) => {
+  const {
+    coilCount = 8,
+    amplitudeMin = 8,
+    amplitudeMax = 20,
+    curveRatioMin = 0.5,
+    curveRatioMax = 1,
+    bezierOffset = 8,
+  } = springConfig;
+ 
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist < 2) return `M${x1},${y1}`;
+  const d = dist / coilCount;
+  const h = Math.max(0.8, 1 - (dist - 40) / 200);
+  const amplitude = Math.max(
+    amplitudeMin,
+    Math.min(amplitudeMax, amplitudeMax * h),
+  );
+  const curveRatio =
+    dist <= 40
+      ? curveRatioMax
+      : dist <= 120
+        ? curveRatioMax - ((dist - 40) / 80) * (curveRatioMax - curveRatioMin)
+        : curveRatioMin;
+  const ux = dx / dist,
+    uy = dy / dist;
+  const perpX = -uy,
+    perpY = ux;
+ 
+  let path = [];
+  for (let i = 0; i < coilCount; i++) {
+    const sx = x1 + ux * (i * d);
+    const sy = y1 + uy * (i * d);
+    const ex = x1 + ux * ((i + 1) * d);
+    const ey = y1 + uy * ((i + 1) * d);
+ 
+    const mx = x1 + ux * ((i + 0.5) * d) + perpX * amplitude;
+    const my = y1 + uy * ((i + 0.5) * d) + perpY * amplitude;
+ 
+    const c1x = sx + d * curveRatio * ux;
+    const c1y = sy + d * curveRatio * uy;
+    const c2x = mx + ux * bezierOffset;
+    const c2y = my + uy * bezierOffset;
+    const c3x = mx - ux * bezierOffset;
+    const c3y = my - uy * bezierOffset;
+    const c4x = ex - d * curveRatio * ux;
+    const c4y = ey - d * curveRatio * uy;
+ 
+    if (i === 0) path.push(`M${sx},${sy}`);
+    else path.push(`L${sx},${sy}`);
+    path.push(`C${c1x},${c1y} ${c2x},${c2y} ${mx},${my}`);
+    path.push(`C${c3x},${c3y} ${c4x},${c4y} ${ex},${ey}`);
+  }
+  return path.join(' ');
+};
+ 
+function useMotionValueValue(mv: any) {
+  return React.useSyncExternalStore(
+    (callback) => {
+      const unsub = mv.on('change', callback);
+      return unsub;
+    },
+    () => mv.get(),
+    () => mv.get(),
+  );
+}
+ 
+type SpringElementProps = {
+  children: React.ReactElement;
+  className?: string;
+  springClassName?: string;
+  dragElastic?: number;
+  springConfig?: { stiffness?: number; damping?: number };
+  springPathConfig?: {
+    coilCount?: number;
+    amplitudeMin?: number;
+    amplitudeMax?: number;
+    curveRatioMin?: number;
+    curveRatioMax?: number;
+    bezierOffset?: number;
+  };
+} & HTMLMotionProps<'div'>;
+ 
+const SpringElement = React.forwardRef<HTMLDivElement, SpringElementProps>(({
+  children,
+  className,
+  springClassName,
+  dragElastic = 0.2,
+  springConfig = { stiffness: 200, damping: 16 },
+  springPathConfig = {},
+  ...props
+}, ref) => {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+ 
+  const springX = useSpring(x, {
+    stiffness: springConfig.stiffness,
+    damping: springConfig.damping,
+  });
+  const springY = useSpring(y, {
+    stiffness: springConfig.stiffness,
+    damping: springConfig.damping,
+  });
+ 
+  const sx = useMotionValueValue(springX);
+  const sy = useMotionValueValue(springY);
+ 
+  const childRef = React.useRef<HTMLDivElement>(null);
+  React.useImperativeHandle(ref, () => childRef.current as HTMLDivElement);
+  const [center, setCenter] = React.useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = React.useState(false);
+ 
+  React.useLayoutEffect(() => {
+    function update() {
+      if (childRef.current) {
+        const rect = childRef.current.getBoundingClientRect();
+        setCenter({
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+        });
+      }
+    }
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, []);
+ 
+  React.useEffect(() => {
+    if (isDragging) {
+      document.body.style.cursor = 'grabbing';
+    } else {
+      document.body.style.cursor = 'default';
+    }
+  }, [isDragging]);
+ 
+  const path = generateSpringPath(
+    center.x,
+    center.y,
+    center.x + sx,
+    center.y + sy,
+    springPathConfig,
+  );
+ 
+  return (
+    <>
+      <svg
+        width="100vw"
+        height="100vh"
+        className="fixed inset-0 w-screen h-screen pointer-events-none z-40 inset-0"
+      >
+        <path
+          d={path}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={cn(
+            'stroke-2 stroke-neutral-900 dark:stroke-neutral-100 fill-none',
+            springClassName,
+          )}
+        />
+      </svg>
+      <motion.div
+        ref={childRef}
+        className={cn(
+          'z-50',
+          isDragging ? 'cursor-grabbing' : 'cursor-grab',
+          className,
+        )}
+        style={{
+          x: springX,
+          y: springY,
+        }}
+        drag
+        dragElastic={dragElastic}
+        dragMomentum={false}
+        onDragStart={() => {
+          setIsDragging(true);
+        }}
+        onDrag={(_, info) => {
+          x.set(info.offset.x);
+          y.set(info.offset.y);
+        }}
+        onDragEnd={() => {
+          x.set(0);
+          y.set(0);
+          setIsDragging(false);
+        }}
+        {...props}
+      >
+        {children}
+      </motion.div>
+    </>
+  );
+});
+
+SpringElement.displayName = "SpringElement";
+
+// ShareableVerdictCard component
+export function ShareableVerdictCard({ idea, score }: { idea: string; score: number }) {
+  const cardRef = React.useRef<HTMLDivElement>(null);
+
+  const handleDownload = async () => {
+    if (cardRef.current) {
+      const canvas = await html2canvas(cardRef.current);
+      const link = document.createElement("a");
+      link.download = "clone-verdict.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+  };
+
+  return (
+    <div>
+      <div
+        ref={cardRef}
+        className="w-[400px] p-6 rounded-2xl border-4 border-neutral-800 bg-gradient-to-br from-yellow-300 to-orange-400 text-neutral-900 shadow-xl space-y-4 mx-auto"
+      >
+        <h2 className="text-2xl font-black">🧠 Your Clone Verdict</h2>
+        <p className="font-bold">"{idea}"</p>
+        <div className="text-3xl font-black">Score: {score}/100</div>
+        <div className="flex justify-between text-sm font-semibold">
+          <span>Chaos</span>
+          <span>Genius</span>
+        </div>
+        <div className="w-full h-4 bg-neutral-800 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-red-400 via-yellow-400 to-green-400"
+            style={{ width: `${score}%` }}
+          />
+        </div>
+        <div className="text-sm text-neutral-700 font-semibold">
+          #IdeaPitch #AIClones
+        </div>
+      </div>
+      <div className="mt-4 text-center">
+        <button
+          onClick={handleDownload}
+          className="px-4 py-2 rounded-full bg-purple-600 text-white font-bold shadow-lg"
+        >
+          Download Your Verdict 🖼️
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+interface AIClone {
+  id: string;
+  emoji: string;
+  name: string;
+  trait: string;
+  positiveKeywords?: string[]; // Added for positive feedback detection
+}
+
+interface IdeaPitchInterfaceProps {
+  onSubmit?: (idea: string) => void;
+  onSummonCouncil?: (selectedClones: AIClone[]) => void;
+}
+
+function IdeaPitchInterface({ 
+  onSubmit = () => {}, 
+  onSummonCouncil = () => {} 
+}: IdeaPitchInterfaceProps) {
+  const [idea, setIdea] = React.useState("");
+  const [selectedClones, setSelectedClones] = React.useState<string[]>([]);
+  const [showCouncilFeedback, setShowCouncilFeedback] = React.useState(false);
+  const [councilScore, setCouncilScore] = React.useState(0);
+  const [animatedScore, setAnimatedScore] = React.useState(0);
+  const [showBalloons, setShowBalloons] = React.useState(false);
+  const balloonsRef = React.useRef<{ launchAnimation: () => void }>(null);
+  const [wildcardClone, setWildcardClone] = React.useState<AIClone | null>(null);
+  const [wildcardSpeech, setWildcardSpeech] = React.useState<string | null>(null);
+  const [showRemixMode, setShowRemixMode] = React.useState(false);
+  const [remixClone, setRemixClone] = React.useState<AIClone | null>(null);
+  const [chatMessages, setChatMessages] = React.useState<any[]>([]);
+  const [chatInput, setChatInput] = React.useState<string>("");
+  const [isTyping, setIsTyping] = React.useState(false);
+  const [currentWildcardEmoji, setCurrentWildcardEmoji] = React.useState("🎲");
+  const [currentWildcardPersonality, setCurrentWildcardPersonality] = React.useState<any>(null);
+  const [isDone, setIsDone] = React.useState(false); // New state for "is this done"
+  const [displayedSpeeches, setDisplayedSpeeches] = React.useState<any[]>([]);
+  const [showIsDoneMessage, setShowIsDoneMessage] = React.useState(false); // New state for "is this done" message visibility
+
+  const aiClones: AIClone[] = [
+    {
+      id: "vc-bro",
+      emoji: "💰",
+      name: "VC Bro",
+      trait: "Will ask about your runway",
+      positiveKeywords: ["runway", "traction", "scale", "growth"]
+    },
+    {
+      id: "elon-clone",
+      emoji: "🚀",
+      name: "Elon Clone",
+      trait: "Everything needs rockets",
+      positiveKeywords: ["mars", "rockets", "disrupt", "future"]
+    },
+    {
+      id: "karen-ceo",
+      emoji: "👩‍💼",
+      name: "Karen CEO",
+      trait: "Wants to speak to your manager",
+      positiveKeywords: ["synergy", "strategy", "leadership", "efficiency"]
+    },
+    {
+      id: "crypto-chad",
+      emoji: "₿",
+      name: "Crypto Chad",
+      trait: "But is it on the blockchain?",
+      positiveKeywords: ["blockchain", "decentralized", "web3", "tokenomics"]
+    },
+    {
+      id: "ai-guru",
+      emoji: "🤖",
+      name: "AI Guru",
+      trait: "Adds AI to everything",
+      positiveKeywords: ["ai", "machine learning", "automation", "intelligence"]
+    }
+  ];
+
+  const wildcardClones: AIClone[] = [
+    { id: "conspiracy-theorist", emoji: "👽", name: "Conspiracy Theorist", trait: "It's all a simulation!" },
+    { id: "cat-influencer", emoji: "🐱", name: "Cat Influencer", trait: "Needs more cat memes." },
+    { id: "ancient-philosopher", emoji: "🏛️", name: "Ancient Philosopher", trait: "But what is 'truth'?" },
+  ];
+
+    const wildcardHotTakes = [
+    "This idea is clearly funded by the lizard people.",
+    "You know, if you add a blockchain to this, it'll solve world hunger.",
+    "My cat, Chairman Meow, thinks this needs more tuna.",
+    "Is this truly 'good' or merely 'effective'?",
+    "This is just a distraction from the real problem: the flat earth.",
+  ];
+
+  const wildcardPersonalities = [
+    {
+      id: "cat-influencer",
+      emoji: "🐱",
+      name: "Chairman Meow",
+      trait: "Everything needs more cats",
+      responses: [
+        "Purr-fect! But have you considered adding more cat videos?",
+        "This idea lacks sufficient tuna. I rate it 3/10 whiskers.",
+        "My human servant would approve, but I need more nap time to think about it.",
+        "Meow meow meow... *translation: This could work if you add laser pointers*",
+        "I've knocked this idea off the table. Literally. It's on the floor now."
+      ]
+    },
+    {
+      id: "conspiracy-theorist",
+      emoji: "👽",
+      name: "Truth Seeker",
+      trait: "Everything is connected",
+      responses: [
+        "Wake up sheeple! This is obviously a government psyop!",
+        "The lizard people are definitely behind this. I can smell the scales.",
+        "Have you considered that this might be a simulation within a simulation?",
+        "This idea glows in the dark. Very suspicious. Very suspicious indeed.",
+        "I've done my research on Facebook. This checks out... or does it?"
+      ]
+    },
+    {
+      id: "ancient-philosopher",
+      emoji: "🏛️",
+      name: "Socrates Jr.",
+      trait: "Questions everything",
+      responses: [
+        "But what IS an idea, really? Can we truly know anything?",
+        "In the cave of startups, are we seeing shadows or reality?",
+        "The unexamined pitch is not worth funding, my friend.",
+        "I know that I know nothing... except that this needs more philosophy.",
+        "If a startup fails in the forest and no one tweets about it, did it really exist?"
+      ]
+    },
+    {
+      id: "time-traveler",
+      emoji: "⏰",
+      name: "Doc Future",
+      trait: "Seen it all before",
+      responses: [
+        "In 2087, we tried this. Spoiler alert: the robots weren't impressed.",
+        "I've seen this exact idea in 47 different timelines. It works in 3 of them.",
+        "Great Scott! This could create a paradox... or just another failed startup.",
+        "The flux capacitor says this idea needs 1.21 gigawatts more innovation.",
+        "I came back from the future to tell you: add more blockchain. Trust me."
+      ]
+    },
+    {
+      id: "pirate-captain",
+      emoji: "🏴‍☠️",
+      name: "Captain Startup",
+      trait: "Seeks treasure",
+      responses: [
+        "Arrr! This idea be worth its weight in doubloons!",
+        "Shiver me timbers! I'd sail the seven seas for this treasure!",
+        "Batten down the hatches! This startup storm be brewin'!",
+        "Yo ho ho! I smell the sweet scent of venture capital on the wind!",
+        "This idea be more valuable than me buried treasure... and that's sayin' somethin'!"
+      ]
+    }
+  ];
+
+  const speechLines = [
+    "This is chaos, and I love it! 🔥",
+    "This is just Twitter, repackaged 📱",
+    "Have you considered adding AI? 🤖",
+    "What's your runway looking like? 💸",
+    "This needs more blockchain ⛓️",
+    "I'm getting major FOMO vibes 😱",
+    "This could disrupt everything! 💥",
+    "But can it scale to Mars? 🚀",
+    "I want to speak to your CTO 👩‍💼",
+    "This is either genius or insane 🤯",
+    "Pure genius! Take my money! 💡",
+    "This will change the world! 🌍",
+    "I'm investing immediately! 💰",
+    "Revolutionary idea! 🚀",
+    "Mind = blown! 🤯"
+  ];
+
+  const floatingEmojis = ["👏", "😂", "🤯", "🔥", "💡", "🚀"];
+
+  const toggleClone = (cloneId: string) => {
+    setSelectedClones(prev => 
+      prev.includes(cloneId) 
+        ? prev.filter(id => id !== cloneId)
+        : [...prev, cloneId]
+    );
+  };
+
+  const handleSummonCouncil = () => {
+    const selected = aiClones.filter(clone => selectedClones.includes(clone.id));
+    const finalScore = Math.floor(Math.random() * 101);
+    
+    // Generate speech bubbles once and store them
+    const speechBubbles = getRandomSpeechBubbles();
+    setDisplayedSpeeches(speechBubbles);
+    
+    setCouncilScore(finalScore);
+    setAnimatedScore(0);
+    setShowCouncilFeedback(true);
+    setShowBalloons(false); // Reset balloons
+    setIsDone(false); // Reset "is this done" state
+    setShowIsDoneMessage(false); // Hide "is this done" message initially
+
+    // Wildcard Clone chance
+    if (Math.random() < 0.2) { // 20% chance
+      const randomWildcard = wildcardClones[Math.floor(Math.random() * wildcardClones.length)];
+      const randomHotTake = wildcardHotTakes[Math.floor(Math.random() * wildcardHotTakes.length)];
+      setWildcardClone(randomWildcard);
+      setWildcardSpeech(randomHotTake);
+    } else {
+      setWildcardClone(null);
+      setWildcardSpeech(null);
+    }
+    
+    // Animate score counter
+    const duration = 2000;
+    const steps = 60;
+    const increment = finalScore / steps;
+    let currentStep = 0;
+    
+    const timer = setInterval(() => {
+      currentStep++;
+      setAnimatedScore(Math.min(Math.floor(increment * currentStep), finalScore));
+      
+      if (currentStep >= steps) {
+        clearInterval(timer);
+        
+                // Check for positive feedback for balloons using stored speeches
+        const positiveSpeeches = [
+          "This is chaos, and I love it! 🔥",
+          "Have you considered adding AI? 🤖",
+          "This could disrupt everything! 💥",
+          "But can it scale to Mars? 🚀",
+          "This is either genius or insane 🤯",
+          "Pure genius! Take my money! 💡",
+          "This will change the world! 🌍",
+          "I'm investing immediately! 💰",
+          "Revolutionary idea! 🚀",
+          "Mind = blown! 🤯"
+        ];
+
+        const positiveFeedbackCount = speechBubbles.filter(bubble => 
+          positiveSpeeches.includes(bubble.speech)
+        ).length;
+
+        if (positiveFeedbackCount >= 3 || finalScore >= 75) {
+          setTimeout(() => {
+            setShowBalloons(true);
+            // Trigger balloons animation directly
+            balloons();
+          }, 500);
+        }
+                setIsDone(true); // Set "is this done" to true after animation
+        setShowIsDoneMessage(true); // Show "is this done" message
+        
+        // Play sound effects
+        try {
+          const audio = new Audio("/sounds/balloon-pop.mp3");
+          audio.play().catch(e => console.log('Audio play failed:', e));
+          
+          // Optional: Play clone-specific voice clips
+          if (selectedClones.length > 0) {
+            const clip = new Audio(`/sounds/verdict-${selectedClones[0]}.mp3`);
+            clip.play().catch(e => console.log('Voice clip play failed:', e));
+          }
+        } catch (error) {
+          console.log('Audio not available:', error);
+        }
+      }
+    }, duration / steps);
+    
+    onSummonCouncil(selected);
+  };
+
+  const getRandomSpeechBubbles = () => {
+    const availableClones = selectedClones.length > 0 
+      ? aiClones.filter(clone => selectedClones.includes(clone.id))
+      : aiClones;
+    
+    const numBubbles = Math.min(Math.max(3, Math.floor(Math.random() * 3) + 3), availableClones.length);
+    const shuffledClones = [...availableClones].sort(() => Math.random() - 0.5);
+    const shuffledLines = [...speechLines].sort(() => Math.random() - 0.5);
+    
+    return shuffledClones.slice(0, numBubbles).map((clone, index) => ({
+      ...clone,
+      speech: shuffledLines[index],
+      delay: index * 200
+    }));
+  };
+
+    const handleRemixMode = (clone: AIClone) => {
+    setRemixClone(clone);
+    setShowRemixMode(true);
+    setChatMessages([
+      {
+        sender: clone.name,
+        content: `Hey there! I'm ${clone.name}. ${clone.trait}. What would you like to discuss about your idea?`,
+        emoji: clone.emoji,
+        isUser: false,
+        timestamp: Date.now()
+      }
+    ]);
+    setChatInput("");
+  };
+
+  const handleWildcardChat = () => {
+    const randomPersonality = wildcardPersonalities[Math.floor(Math.random() * wildcardPersonalities.length)];
+    setCurrentWildcardPersonality(randomPersonality);
+    setCurrentWildcardEmoji(randomPersonality.emoji);
+    
+    const wildcardClone = {
+      id: 'wildcard',
+      emoji: randomPersonality.emoji,
+      name: randomPersonality.name,
+      trait: randomPersonality.trait
+    };
+    
+    setRemixClone(wildcardClone);
+    setShowRemixMode(true);
+    setChatMessages([
+      {
+        sender: randomPersonality.name,
+        content: `Greetings! I'm ${randomPersonality.name}. ${randomPersonality.trait}. Let's dive deep into your idea!`,
+        emoji: randomPersonality.emoji,
+        isUser: false,
+        timestamp: Date.now()
+      }
+    ]);
+    setChatInput("");
+  };
+
+  const handleSendMessage = () => {
+    if (!chatInput.trim() || isTyping) return;
+
+    const userMessage = {
+      sender: "You",
+      content: chatInput,
+      emoji: "👤",
+      isUser: true,
+      timestamp: Date.now()
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+    setChatInput("");
+    setIsTyping(true);
+
+    // Simulate AI response delay
+    setTimeout(() => {
+      let response = "";
+      
+      if (remixClone?.id === 'wildcard' && currentWildcardPersonality) {
+        const responses = currentWildcardPersonality.responses;
+        response = responses[Math.floor(Math.random() * responses.length)];
+      } else {
+        // Regular clone responses
+        const responses = [
+          `Interesting perspective! As ${remixClone?.name}, I think ${remixClone?.trait.toLowerCase()}.`,
+          `That's a solid point. Let me add my ${remixClone?.name} spin to it...`,
+          `From my experience as ${remixClone?.name}, I'd say this could work if...`,
+          `You know what? ${remixClone?.trait} That's exactly what this needs!`,
+          `I've seen similar ideas before. The key is to really focus on...`
+        ];
+        response = responses[Math.floor(Math.random() * responses.length)];
+      }
+
+      const aiMessage = {
+        sender: remixClone?.name || "AI",
+        content: response,
+        emoji: remixClone?.emoji || "🤖",
+        isUser: false,
+        timestamp: Date.now()
+      };
+
+      setChatMessages(prev => [...prev, aiMessage]);
+      setIsTyping(false);
+    }, 1000 + Math.random() * 2000); // Random delay between 1-3 seconds
+  };
+
+  const handleShareVerdict = () => {
+    const verdictText = `My idea got a Council Score of ${councilScore}/100! 🚀\n\n"${idea}"\n\nSee what the AI Clones had to say! #IdeaPitch #AIClones`;
+    if (navigator.share) {
+      navigator.share({
+        title: 'My Idea Pitch Verdict',
+        text: verdictText,
+      }).catch((error) => console.error('Error sharing:', error));
+    } else {
+      alert(`Share this:\n\n${verdictText}`);
+    }
+  };
+
+  return (
+        <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400 p-6 relative overflow-hidden">
+      
+      {/* "Is this done?" message */}
+      {showIsDoneMessage && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="text-center p-8 rounded-2xl border-4 border-neutral-800 bg-gradient-to-br from-green-300 to-blue-400 text-neutral-900 shadow-xl space-y-4 animate-pop-in">
+            <h2 className="text-5xl font-black">🎉 YES, IT'S DONE! 🎉</h2>
+            <p className="text-2xl font-bold">Your verdict is in!</p>
+            <CartoonButton
+              label="Awesome!"
+              color="bg-purple-600"
+              onClick={() => setShowIsDoneMessage(false)}
+              className="text-xl px-8 py-4"
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-2xl mx-auto space-y-8">
+        {/* Main Headline */}
+        <div className="text-center">
+          <GradientHeading 
+            size="xxl" 
+            weight="black"
+            className="text-white drop-shadow-lg"
+          >
+            What's your idea?
+          </GradientHeading>
+        </div>
+
+        {/* Large Text Input */}
+        <div className="relative">
+          <Textarea
+            value={idea}
+            onChange={(e) => setIdea(e.target.value)}
+                        placeholder="Tell me your wildest startup idea... 💡"
+            className="min-h-[120px] text-lg p-6 rounded-2xl border-4 border-neutral-800 bg-yellow-200 text-neutral-800 placeholder:text-neutral-600 font-bold shadow-[4px_4px_0_0_#262626] focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:shadow-[6px_6px_0_0_#262626] transition-all duration-150"
+          />
+        </div>
+
+        {/* AI Clones Scrollable Row */}
+        <div className="space-y-4">
+          <h3 className="text-2xl font-black text-white text-center drop-shadow-lg">
+            Choose Your Council
+          </h3>
+          <XScroll className="pb-4">
+            <div className="flex gap-4 p-2">
+              {aiClones.map((clone) => (
+                <SpringElement key={clone.id} className="flex-shrink-0">
+                  <div
+                    onClick={() => toggleClone(clone.id)}
+                    className={`w-48 p-4 rounded-2xl border-4 border-neutral-800 cursor-pointer transition-all duration-150 hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#262626] ${
+                      selectedClones.includes(clone.id)
+                        ? 'bg-green-300 shadow-[4px_4px_0_0_#262626]'
+                        : 'bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="text-center space-y-2">
+                      <div className="text-4xl">{clone.emoji}</div>
+                      <div className="font-black text-lg text-neutral-800">{clone.name}</div>
+                      <div className="text-sm text-neutral-600 font-semibold">{clone.trait}</div>
+                    </div>
+                  </div>
+                </SpringElement>
+              ))}
+            </div>
+          </XScroll>
+        </div>
+
+        {/* Summon Council Button */}
+        <div className="text-center">
+          <CartoonButton
+            label="🔮 Summon Council"
+            color="bg-green-400"
+            onClick={handleSummonCouncil}
+            className="text-2xl px-8 py-4"
+          />
+        </div>
+
+        {/* Selected Clones Display */}
+        {selectedClones.length > 0 && !showCouncilFeedback && (
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 border-2 border-white/30">
+              <span className="text-white font-bold">Selected:</span>
+              <div className="flex gap-1">
+                {selectedClones.map(cloneId => {
+                  const clone = aiClones.find(c => c.id === cloneId);
+                  return clone ? (
+                    <span key={cloneId} className="text-xl">{clone.emoji}</span>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Council Feedback */}
+        {showCouncilFeedback && (
+          <div className="space-y-6">
+            {/* Speech Bubbles */}
+            <div className="space-y-4">
+                            {displayedSpeeches.map((clone, index) => (
+                <motion.div
+                  key={`${clone.id}-${index}`}
+                  className="flex items-start gap-3"
+                  initial={{ scale: 1 }}
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 0.6, delay: clone.delay / 1000 }}
+                >
+                  <div className="flex-shrink-0 w-12 h-12 bg-white rounded-full border-3 border-neutral-800 flex items-center justify-center text-xl shadow-[2px_2px_0_0_#262626]">
+                    <Avatar className="w-full h-full border-2 border-neutral-800 shadow-[2px_2px_0_0_#262626]">
+                      <AvatarFallback className="bg-background text-foreground text-xl">{clone.emoji}</AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <div className="flex-1 bg-white rounded-2xl border-3 border-neutral-800 p-4 shadow-[3px_3px_0_0_#262626] relative">
+                    <div className="absolute -left-2 top-4 w-4 h-4 bg-white border-l-3 border-b-3 border-neutral-800 rotate-45"></div>
+                    <div className="font-bold text-neutral-800 text-sm mb-1">{clone.name}</div>
+                    <div className="text-neutral-700">{clone.speech}</div>
+                  </div>
+                                </motion.div>
+              ))}
+
+              {/* Wildcard Clone */}
+              {wildcardClone && wildcardSpeech && (
+                <div className="flex items-start gap-3 animate-wildcard-appear">
+                                    <div className="flex-shrink-0 w-12 h-12 bg-purple-600 rounded-full border-3 border-neutral-800 flex items-center justify-center text-xl shadow-[2px_2px_0_0_#262626] relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-indigo-700 animate-smoke-effect"></div>
+                    <div className="absolute inset-0 bg-purple-400 opacity-50 animate-pulse"></div>
+                    <Avatar className="w-full h-full border-2 border-neutral-800 shadow-[2px_2px_0_0_#262626] relative z-10">
+                      <AvatarFallback className="bg-background text-foreground text-xl">{wildcardClone.emoji}</AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <div className="flex-1 bg-purple-200 rounded-2xl border-3 border-neutral-800 p-4 shadow-[3px_3px_0_0_#262626] relative">
+                    <div className="absolute -left-2 top-4 w-4 h-4 bg-purple-200 border-l-3 border-b-3 border-neutral-800 rotate-45"></div>
+                    <div className="font-black text-purple-800 text-sm mb-1">Wildcard: {wildcardClone.name}</div>
+                    <div className="text-purple-700 font-semibold">{wildcardSpeech}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Floating Emoji Reactions */}
+            <div className="relative h-20 overflow-hidden">
+              {floatingEmojis.map((emoji, index) => (
+                <div
+                  key={index}
+                  className="absolute text-2xl animate-float-up"
+                  style={{
+                    left: `${Math.random() * 80 + 10}%`,
+                    animationDelay: `${Math.random() * 2000}ms`,
+                    animationDuration: '3s'
+                  }}
+                >
+                  {emoji}
+                </div>
+              ))}
+            </div>
+
+            {/* Council Score Meter */}
+            <div className="bg-white/20 backdrop-blur-sm rounded-2xl border-3 border-white/30 p-6">
+              <div className="text-center mb-4">
+                <h3 className="text-2xl font-black text-white drop-shadow-lg">Council Score</h3>
+                <div className="text-4xl font-black text-white drop-shadow-lg">{animatedScore}/100</div>
+              </div>
+              <div className="relative h-6 bg-neutral-800 rounded-full border-2 border-neutral-800 overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 rounded-full transition-all duration-2000 ease-out"
+                  style={{ width: `${animatedScore}%` }}
+                ></div>
+              </div>
+              <div className="flex justify-between text-sm font-bold text-white/80 mt-2">
+                <span>Chaos</span>
+                <span>Genius</span>
+              </div>
+            </div>
+
+            {/* ShareableVerdictCard */}
+            <div className="text-center">
+              <ShareableVerdictCard idea={idea} score={councilScore} />
+            </div>
+
+            {/* Remix Mode Button */}
+            <div className="text-center">
+              <CartoonButton
+                label="🎛️ Remix Mode"
+                color="bg-yellow-400"
+                onClick={() => setShowRemixMode(!showRemixMode)}
+                className="text-lg px-6 py-3"
+              />
+            </div>
+
+                        {/* Enhanced Remix Mode Interface */}
+            {showRemixMode && (
+              <div className="bg-white/20 backdrop-blur-sm rounded-2xl border-3 border-white/30 p-6 space-y-4 animate-fade-in">
+                <h3 className="text-2xl font-black text-white text-center drop-shadow-lg">
+                  Private Chat Zone
+                </h3>
+                
+                {/* Clone Selection */}
+                <div className="flex gap-4 justify-center flex-wrap">
+                  {aiClones.map((clone) => (
+                    <div
+                      key={clone.id}
+                      onClick={() => handleRemixMode(clone)}
+                      className={`flex-shrink-0 w-20 h-20 p-2 rounded-xl border-4 border-neutral-800 cursor-pointer transition-all duration-150 hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#262626] flex items-center justify-center text-3xl ${
+                        remixClone?.id === clone.id
+                          ? 'bg-blue-300 shadow-[4px_4px_0_0_#262626]'
+                          : 'bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <span>{clone.emoji}</span>
+                    </div>
+                  ))}
+                  
+                  {/* Wildcard Chat Option */}
+                  <div
+                    onClick={() => handleWildcardChat()}
+                    className={`flex-shrink-0 w-20 h-20 p-2 rounded-xl border-4 border-neutral-800 cursor-pointer transition-all duration-150 hover:-translate-y-1 hover:shadow-[4px_4px_0_0_#262626] flex items-center justify-center text-3xl bg-gradient-to-br from-purple-400 to-pink-400 relative overflow-hidden ${
+                      remixClone?.id === 'wildcard'
+                        ? 'shadow-[4px_4px_0_0_#262626] scale-105'
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-indigo-700 animate-pulse opacity-30"></div>
+                    <span className="relative z-10">{currentWildcardEmoji}</span>
+                  </div>
+                </div>
+
+                {/* Chat Interface */}
+                {remixClone && (
+                  <div className="space-y-4">
+                    {/* Chat Messages Area */}
+                    <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-4 min-h-[200px] max-h-[300px] overflow-y-auto space-y-3">
+                      {chatMessages.map((message, index) => (
+                        <div
+                          key={index}
+                          className={`flex items-start gap-3 animate-message-appear ${
+                            message.isUser ? 'flex-row-reverse' : ''
+                          }`}
+                          style={{
+                            animationDelay: `${index * 100}ms`,
+                            animationFillMode: 'both'
+                          }}
+                        >
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-full border-2 border-neutral-800 flex items-center justify-center text-lg shadow-[2px_2px_0_0_#262626] ${
+                            message.isUser ? 'bg-green-400' : remixClone.id === 'wildcard' ? 'bg-purple-400' : 'bg-blue-400'
+                          }`}>
+                            <span>{message.isUser ? '👤' : message.emoji}</span>
+                          </div>
+                          <div className={`flex-1 max-w-[80%] rounded-2xl border-2 border-neutral-800 p-3 shadow-[2px_2px_0_0_#262626] relative ${
+                            message.isUser 
+                              ? 'bg-green-100 text-green-800' 
+                              : remixClone.id === 'wildcard' 
+                                ? 'bg-purple-100 text-purple-800' 
+                                : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            <div className={`absolute top-4 w-3 h-3 border-l-2 border-b-2 border-neutral-800 rotate-45 ${
+                              message.isUser 
+                                ? '-right-1 bg-green-100' 
+                                : remixClone.id === 'wildcard'
+                                  ? '-left-1 bg-purple-100'
+                                  : '-left-1 bg-blue-100'
+                            }`}></div>
+                            <div className="font-bold text-xs mb-1">{message.sender}</div>
+                            <div className="text-sm">{message.content}</div>
+                            <div className="text-xs opacity-60 mt-1">just now</div>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {/* Typing Indicator */}
+                      {isTyping && (
+                        <div className="flex items-start gap-3 animate-pulse">
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-full border-2 border-neutral-800 flex items-center justify-center text-lg shadow-[2px_2px_0_0_#262626] ${
+                            remixClone.id === 'wildcard' ? 'bg-purple-400' : 'bg-blue-400'
+                          }`}>
+                            <span>{remixClone.emoji}</span>
+                          </div>
+                          <div className={`rounded-2xl border-2 border-neutral-800 p-3 shadow-[2px_2px_0_0_#262626] relative ${
+                            remixClone.id === 'wildcard' ? 'bg-purple-100' : 'bg-blue-100'
+                          }`}>
+                            <div className={`absolute -left-1 top-4 w-3 h-3 border-l-2 border-b-2 border-neutral-800 rotate-45 ${
+                              remixClone.id === 'wildcard' ? 'bg-purple-100' : 'bg-blue-100'
+                            }`}></div>
+                            <div className="flex gap-1">
+                              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                              <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Chat Input */}
+                    <div className="relative">
+                      <Textarea
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
+                          }
+                        }}
+                        placeholder={`Chat with ${remixClone.name}... (Press Enter to send)`}
+                        className="min-h-[80px] p-4 pr-16 rounded-xl border-3 border-neutral-800 bg-white/90 text-neutral-800 placeholder:text-neutral-600 font-bold shadow-[3px_3px_0_0_#262626] focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:shadow-[4px_4px_0_0_#262626] transition-all duration-150 resize-none"
+                      />
+                      <CartoonButton
+                        label="Send"
+                        color="bg-green-400"
+                        onClick={handleSendMessage}
+                        disabled={!chatInput.trim() || isTyping}
+                        className="absolute bottom-2 right-2 text-sm px-4 py-2"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Reset Button */}
+            <div className="text-center">
+              <CartoonButton
+                label="🔄 New Pitch"
+                color="bg-blue-400"
+                onClick={() => {
+                  setShowCouncilFeedback(false);
+                  setIdea("");
+                  setSelectedClones([]);
+                  setCouncilScore(0);
+                  setAnimatedScore(0);
+                  setShowBalloons(false); // Reset balloons
+                  setWildcardClone(null);
+                  setWildcardSpeech(null);
+                  setShowRemixMode(false);
+                  setRemixClone(null);
+                  setDisplayedSpeeches([]);
+                  setChatMessages([]);
+                  setChatInput("");
+                  setIsTyping(false);
+                  setCurrentWildcardPersonality(null);
+                  setIsDone(false); // Reset "is this done" state
+                  setShowIsDoneMessage(false); // Hide "is this done" message
+                }}
+                className="text-lg px-6 py-3"
+              />
+            </div>
+
+            {/* Share Button */}
+            <div className="text-center">
+              <CartoonButton
+                label="Show off your Clone Verdict"
+                color="bg-purple-400"
+                onClick={handleShareVerdict}
+                className="text-lg px-6 py-3"
+                icon={<Share2 size={24} />}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function Demo() {
+  return (
+    <>
+      <style jsx global>{`
+        @keyframes bounce-in {
+          0% {
+            opacity: 0;
+            transform: translateY(20px) scale(0.8);
+          }
+          50% {
+            transform: translateY(-5px) scale(1.05);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        
+        @keyframes float-up {
+          0% {
+            opacity: 0;
+            transform: translateY(80px) scale(0.5);
+          }
+          20% {
+            opacity: 1;
+            transform: translateY(60px) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.8) rotate(15deg);
+          }
+        }
+
+        @keyframes wildcard-appear {
+          0% {
+            opacity: 0;
+            transform: scale(0.5) translateY(50px);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.1) translateY(-10px);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+
+        @keyframes smoke-effect {
+          0% {
+            transform: scale(0.5) rotate(0deg);
+            opacity: 0.5;
+            filter: blur(5px);
+          }
+          100% {
+            transform: scale(1.5) rotate(360deg);
+            opacity: 0;
+            filter: blur(10px);
+          }
+        }
+
+        @keyframes fade-in {
+          0% { opacity: 0; transform: translateY(20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pop-in {
+          0% {
+            opacity: 0;
+            transform: scale(0.5);
+          }
+          80% {
+            transform: scale(1.05);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        .animate-bounce-in {
+          animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .animate-float-up {
+          animation: float-up 3s ease-out infinite;
+        }
+
+        .animate-wildcard-appear {
+          animation: wildcard-appear 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .animate-smoke-effect {
+          animation: smoke-effect 1.5s ease-out forwards;
+        }
+
+        .animate-fade-in {
+          animation: fade-in 0.5s ease-out forwards;
+        }
+
+        .animate-pop-in {
+          animation: pop-in 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        }
+
+        @keyframes message-appear {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-message-appear {
+          animation: message-appear 0.3s ease-out forwards;
+        }
+        
+        .duration-2000 {
+          transition-duration: 2000ms;
+        }
+
+        /* Balloons container for balloons.js */
+        .balloons-container {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          z-index: 10; /* Ensure it's above other content */
+          pointer-events: none; /* Allow clicks to pass through */
+        }
+      `}</style>
+      <IdeaPitchInterface 
+        onSubmit={(idea) => console.log('Idea submitted:', idea)}
+        onSummonCouncil={(clones) => console.log('Council summoned:', clones)}
+      />
+    </>
+  );
+}
