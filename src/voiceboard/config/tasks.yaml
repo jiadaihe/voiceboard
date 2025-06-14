@@ -1,0 +1,125 @@
+persona_identification_task:
+  description: >
+    Analyze the startup idea: "{startup_idea}" and identify 3-5 industry leaders, 
+    entrepreneurs, and domain experts who would provide the most critical and 
+    challenging perspectives for evaluating this concept. Focus on personas known 
+    for their honest, direct feedback and ability to spot potential failures. 
+    Consider the startup's industry, target market, business model, and unique 
+    challenges when selecting relevant voices.
+  expected_output: >
+    A JSON array of 3-5 persona recommendations with the following structure:
+    [
+      {
+        "name": "Full Name",
+        "title": "Primary role/title",
+        "company": "Most notable company",
+        "relevance_reason": "Why they're relevant to this startup domain (2-3 sentences)",
+        "criticism_style": "How they typically provide feedback (direct, analytical, skeptical, etc.)",
+        "known_for_challenging": "What aspects they commonly challenge (market size, business model, execution, etc.)",
+        "failure_experience": "Their notable failures or challenges that give them credibility",
+        "tough_questions_they_ask": ["Example question 1", "Example question 2", "Example question 3"]
+      }
+    ]
+  agent: persona_identifier
+
+voice_research_task:
+  description: >
+    Research and compile comprehensive critical voice profiles for each persona 
+    identified in the previous task. Focus on gathering their documented 
+    communication styles, skeptical questioning methods, criticism examples, 
+    failure analyses, and realistic market assessments. Search for interviews, 
+    articles, books, podcasts, and public statements that reveal their authentic 
+    voice and critical thinking patterns.
+  expected_output: >
+    A JSON object containing detailed voice profiles for each persona:
+    {
+      "personas": [
+        {
+          "name": "Full Name",
+          "voice_profile": {
+            "communication_style": {
+              "tone": "direct/analytical/skeptical",
+              "approach": "How they challenge ideas",
+              "signature_style": "Their unique communication patterns"
+            },
+            "critical_frameworks": [
+              "Framework 1: Description of their analysis method",
+              "Framework 2: Another key approach they use"
+            ],
+            "common_phrases": [
+              "Phrase they commonly use when skeptical",
+              "Another typical expression",
+              "How they frame tough questions"
+            ],
+            "tough_questions": {
+              "market_viability": ["Question 1", "Question 2", "Question 3"],
+              "business_model": ["Question 1", "Question 2", "Question 3"],
+              "execution": ["Question 1", "Question 2", "Question 3"],
+              "financials": ["Question 1", "Question 2", "Question 3"]
+            },
+            "criticism_examples": [
+              "Example of harsh but fair feedback they've given",
+              "Another instance of challenging an idea"
+            ],
+            "failure_lessons": [
+              "Key lesson from their failures",
+              "Another important insight from setbacks"
+            ],
+            "documented_quotes": [
+              "Actual quote showing their critical thinking",
+              "Another authentic quote from interviews/books"
+            ]
+          }
+        }
+      ]
+    }
+  agent: voice_researcher
+  context: [persona_identification_task]
+
+persona_conversation_task:
+  description: >
+    Simulate an authentic conversation as {selected_persona_name} with the user 
+    about their startup idea: "{startup_idea}". Use the voice profile data from 
+    the previous research to respond exactly as this persona would - using their 
+    documented language patterns, critical thinking frameworks, and questioning 
+    style. Provide brutally honest feedback without generic AI validation.
+    
+    Persona Name: {selected_persona_name}
+    User Message: "{user_message}"
+    
+    Use the researched voice profile to challenge assumptions, identify potential 
+    failures, and ask the tough questions this persona is known for asking.
+  expected_output: >
+    An authentic conversational response that:
+    - Uses the persona's documented phrases and communication style
+    - Applies their specific critical thinking frameworks
+    - Challenges the startup idea with realistic concerns
+    - Asks 2-3 tough follow-up questions in their documented style
+    
+    Format: "Speaking as {selected_persona_name}: [Authentic response using their 
+    voice profile data, including specific challenges and tough questions they 
+    would realistically ask]"
+  agent: persona_conversation_agent
+  context: [voice_research_task]
+
+persona_followup_task:
+  description: >
+    Continue the conversation as {selected_persona_name} responding to the user's 
+    answer: "{user_response}". Maintain their authentic voice and critical 
+    thinking style. Dig deeper into any concerns raised, challenge new assumptions, 
+    and continue providing the realistic feedback this persona is known for.
+    
+    Persona Name: {selected_persona_name}
+    Previous Context: "{conversation_history}"
+    User Response: "{user_response}"
+  expected_output: >
+    A follow-up response that:
+    - Maintains consistent persona voice and style
+    - Responds to the user's specific points
+    - Raises new concerns or digs deeper into existing ones
+    - Continues the critical evaluation with 2-3 new tough questions
+    
+    Format: "Speaking as {selected_persona_name}: [Continued authentic response 
+    addressing their points while maintaining critical perspective]"
+  agent: persona_conversation_agent
+  context: [persona_conversation_task]
