@@ -1,56 +1,17 @@
 #!/usr/bin/env python
 import sys
-import warnings
-
+import os
 from datetime import datetime
-
 from voiceboard.crew import Voiceboard
-
-warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
-
-# This main file is intended to be a way for you to run your
-# crew locally, so refrain from adding unnecessary logic into this file.
-# Replace with inputs you want to test with, it will automatically
-# interpolate any tasks and agents information
-
-
-
-def run():
-    """
-    Run the full Voiceboard crew workflow for startup idea evaluation.
-    """
-    # Example startup idea - in production, this would come from user input
-    startup_idea = "An AI-powered personal finance app that analyzes spending patterns and provides automated investment recommendations"
-    
-    inputs = {
-        'startup_idea': startup_idea,
-        'current_year': str(datetime.now().year)
-    }
-    
-    try:
-        print("🚀 Starting Voiceboard crew for startup idea evaluation...")
-        print(f"💡 Startup Idea: {startup_idea}")
-        print("\n" + "="*80 + "\n")
-        
-        # Run the initial setup (persona identification + voice research)
-        voiceboard = Voiceboard()
-        result = voiceboard.run_initial_setup(startup_idea)
-        
-        print("✅ Voiceboard crew execution completed!")
-        print("\n📋 Results:")
-        print(result)
-        
-    except Exception as e:
-        raise Exception(f"An error occurred while running the crew: {e}")
 
 
 def interactive():
     """
-    Run an interactive session where users can have conversations with selected personas.
+    Interactive startup evaluation session with critical business personas.
     """
     try:
-        print("🎯 Welcome to Voiceboard - Interactive Startup Evaluation!")
-        print("="*60)
+        print("🎯 Welcome to Voiceboard - Get Critical Feedback on Your Startup!")
+        print("="*65)
         
         # Get startup idea from user
         startup_idea = input("\n💡 Describe your startup idea: ")
@@ -60,31 +21,35 @@ def interactive():
             return
             
         print(f"\n🔍 Analyzing your idea: {startup_idea}")
-        print("⏳ Finding relevant critical personas and researching their voices...")
+        print("⏳ Finding critical personas and researching their voices...")
         
         # Initialize Voiceboard and run setup
         voiceboard = Voiceboard()
         setup_result = voiceboard.run_initial_setup(startup_idea)
         
-        print("\n✅ Research complete! Here are the critical personas who can evaluate your idea:")
+        print("\n✅ Research complete! Here are critical personas who can evaluate your idea:")
         
-        # In a real implementation, you'd parse the JSON result to show persona options
-        # For now, we'll simulate the selection process
-        print("\n👥 Available Personas:")
-        print("1. Kevin O'Leary - Direct investor feedback")
-        print("2. Barbara Corcoran - Market reality check") 
-        print("3. Mark Cuban - Scalability challenges")
+        # Show available personas (in production, you'd parse the actual JSON results)
+        print("\n👥 Available Critical Personas:")
+        print("1. Kevin O'Leary - Direct, money-focused investor feedback")
+        print("2. Barbara Corcoran - Market reality and execution challenges") 
+        print("3. Mark Cuban - Scalability and competitive analysis")
+        print("4. Reid Hoffman - Network effects and platform strategy")
+        print("5. Sara Blakely - Customer validation and bootstrapping")
         
         # Get persona selection
-        persona_choice = input("\n🎯 Select a persona (1-3): ")
+        persona_choice = input("\n🎯 Select a persona (1-5): ")
         persona_map = {
             "1": "Kevin O'Leary",
             "2": "Barbara Corcoran", 
-            "3": "Mark Cuban"
+            "3": "Mark Cuban",
+            "4": "Reid Hoffman",
+            "5": "Sara Blakely"
         }
         
         selected_persona = persona_map.get(persona_choice, "Kevin O'Leary")
-        print(f"\n🗣️  You'll be talking to: {selected_persona}")
+        print(f"\n🗣️  You're now talking to: {selected_persona}")
+        print("💡 Tip: They will give you honest, critical feedback - not validation!")
         
         # Start conversation loop
         conversation_history = ""
@@ -101,162 +66,107 @@ def interactive():
                 
             print(f"\n⏳ {selected_persona} is thinking...")
             
-            # Run conversation
-            if not conversation_history:
-                response = voiceboard.run_conversation(selected_persona, user_message)
-            else:
-                response = voiceboard.run_followup(selected_persona, user_message, conversation_history)
-            
-            print(f"\n🎙️  {selected_persona}: {response.raw}")
-            
-            # Update conversation history
-            conversation_history += f"User: {user_message}\n{selected_persona}: {response.raw}\n"
+            try:
+                # Run conversation
+                if not conversation_history:
+                    response = voiceboard.run_conversation(
+                        selected_persona_name=selected_persona, 
+                        user_message=user_message,
+                        startup_idea=startup_idea
+                    )
+                else:
+                    response = voiceboard.run_followup(
+                        selected_persona_name=selected_persona, 
+                        user_response=user_message, 
+                        conversation_history=conversation_history
+                    )
+                
+                print(f"\n🎙️  {selected_persona}: {response.raw}")
+                
+                # Update conversation history
+                conversation_history += f"User: {user_message}\n{selected_persona}: {response.raw}\n"
+                
+            except Exception as e:
+                print(f"❌ Error during conversation: {e}")
+                print("Let's try again...")
+                continue
             
     except Exception as e:
-        raise Exception(f"An error occurred during interactive session: {e}")
+        print(f"❌ An error occurred: {e}")
+        print("Please check your API keys and try again.")
 
 
-def demo():
+def simple_test():
     """
-    Run a demo conversation with preset messages.
+    Test basic crew setup without running full workflow.
     """
-    startup_idea = "An AI-powered meal planning app that creates personalized recipes based on dietary restrictions and local ingredient availability"
-    
     try:
-        print("🎬 Running Voiceboard Demo...")
-        print(f"💡 Demo Startup: {startup_idea}")
-        print("\n" + "="*80 + "\n")
+        print("🧪 Testing Voiceboard setup...")
         
+        # Check API key
+        if not os.getenv('SERPER_API_KEY'):
+            print("⚠️  Warning: SERPER_API_KEY not found in environment")
+            print("   Set it in .env file or environment variables for full functionality")
+        else:
+            print("✅ SERPER_API_KEY found")
+        
+        # Test crew initialization
         voiceboard = Voiceboard()
+        print("✅ Voiceboard crew initialized successfully!")
         
-        # Setup phase
-        print("🔍 Phase 1: Finding critical personas...")
-        setup_result = voiceboard.run_initial_setup(startup_idea)
-        print("✅ Setup complete!\n")
+        # Test agent creation
+        persona_agent = voiceboard.persona_identifier()
+        print("✅ Persona identifier agent created!")
         
-        # Demo conversation
-        selected_persona = "Kevin O'Leary"  # Simulated selection
-        user_message = "I think this app could make millions by solving meal planning for busy families"
+        voice_agent = voiceboard.voice_researcher()
+        print("✅ Voice researcher agent created!")
         
-        print(f"🗣️  Demo conversation with {selected_persona}")
-        print(f"👤 User: {user_message}")
+        conversation_agent = voiceboard.persona_conversation_agent()
+        print("✅ Conversation agent created!")
         
-        response = voiceboard.run_conversation(selected_persona, user_message)
-        print(f"🎙️  {selected_persona}: {response.raw}")
-        
-        # Follow-up
-        user_followup = "But I have a strong business model with subscription revenue and partnerships with grocery stores"
-        print(f"\n👤 User: {user_followup}")
-        
-        conversation_history = f"User: {user_message}\n{selected_persona}: {response.raw}"
-        followup_response = voiceboard.run_followup(selected_persona, user_followup, conversation_history)
-        print(f"🎙️  {selected_persona}: {followup_response.raw}")
-        
-        print("\n🎬 Demo completed!")
+        print("\n🎉 All systems ready! Run 'python main.py' to start interactive session.")
         
     except Exception as e:
-        raise Exception(f"An error occurred while running the demo: {e}")
+        print(f"❌ Setup test failed: {e}")
+        import traceback
+        traceback.print_exc()
 
 
-def train():
+def help_info():
     """
-    Train the crew for a given number of iterations.
+    Show help information about Voiceboard.
     """
-    startup_idea = "An AI-powered productivity app that automatically schedules tasks based on priority and energy levels"
-    
-    inputs = {
-        "startup_idea": startup_idea,
-        'current_year': str(datetime.now().year)
-    }
-    
-    try:
-        n_iterations = int(sys.argv[1]) if len(sys.argv) > 1 else 2
-        filename = sys.argv[2] if len(sys.argv) > 2 else "voiceboard_training"
-        
-        print(f"🎓 Training Voiceboard crew for {n_iterations} iterations...")
-        print(f"💾 Saving training data to: {filename}")
-        
-        Voiceboard().crew().train(n_iterations=n_iterations, filename=filename, inputs=inputs)
-        
-        print("✅ Training completed!")
-
-    except Exception as e:
-        raise Exception(f"An error occurred while training the crew: {e}")
-
-
-def replay():
-    """
-    Replay the crew execution from a specific task.
-    """
-    try:
-        task_id = sys.argv[1] if len(sys.argv) > 1 else None
-        
-        if not task_id:
-            print("❌ Please provide a task ID to replay")
-            print("Usage: python main.py replay <task_id>")
-            return
-            
-        print(f"🔄 Replaying Voiceboard crew from task: {task_id}")
-        
-        Voiceboard().crew().replay(task_id=task_id)
-        
-        print("✅ Replay completed!")
-
-    except Exception as e:
-        raise Exception(f"An error occurred while replaying the crew: {e}")
-
-
-def test():
-    """
-    Test the crew execution and returns the results.
-    """
-    startup_idea = "A blockchain-based social media platform that rewards users with cryptocurrency for quality content"
-    
-    inputs = {
-        "startup_idea": startup_idea,
-        "current_year": str(datetime.now().year)
-    }
-    
-    try:
-        n_iterations = int(sys.argv[1]) if len(sys.argv) > 1 else 1
-        eval_llm = sys.argv[2] if len(sys.argv) > 2 else "gpt-4"
-        
-        print(f"🧪 Testing Voiceboard crew with {n_iterations} iterations...")
-        print(f"🤖 Using evaluation LLM: {eval_llm}")
-        print(f"💡 Test Startup: {startup_idea}")
-        
-        Voiceboard().crew().test(n_iterations=n_iterations, eval_llm=eval_llm, inputs=inputs)
-        
-        print("✅ Testing completed!")
-
-    except Exception as e:
-        raise Exception(f"An error occurred while testing the crew: {e}")
+    print("🎯 Voiceboard - Critical Startup Feedback Tool")
+    print("="*50)
+    print("\nVoiceboard helps entrepreneurs get honest, critical feedback on their")
+    print("startup ideas by simulating conversations with tough business personas.")
+    print("\nUsage:")
+    print("  python main.py              - Start interactive session")
+    print("  python main.py test          - Test system setup")
+    print("  python main.py help          - Show this help")
+    print("\nSetup:")
+    print("  1. Get API key from serper.dev")
+    print("  2. Add SERPER_API_KEY to .env file")
+    print("  3. Run interactive session")
+    print("\nFeatures:")
+    print("  • Research critical business personas")
+    print("  • Simulate authentic tough conversations")
+    print("  • Get realistic feedback (not validation)")
+    print("  • Challenge your assumptions")
 
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         command = sys.argv[1].lower()
         
-        if command == "interactive":
-            interactive()
-        elif command == "demo":
-            demo()
-        elif command == "train":
-            train()
-        elif command == "replay":
-            replay()
-        elif command == "test":
-            test()
-        elif command == "run":
-            run()
+        if command in ["test", "check"]:
+            simple_test()
+        elif command in ["help", "-h", "--help"]:
+            help_info()
         else:
-            print("❌ Unknown command. Available commands:")
-            print("  python main.py run          - Run basic crew workflow")
-            print("  python main.py interactive  - Interactive conversation session")
-            print("  python main.py demo         - Run demonstration")
-            print("  python main.py train <n> <filename> - Train the crew")
-            print("  python main.py replay <task_id> - Replay from specific task")
-            print("  python main.py test <n> <llm> - Test the crew")
+            print(f"❌ Unknown command: {command}")
+            print("Available commands: test, help")
+            print("Run without arguments for interactive session.")
     else:
         # Default to interactive mode
         interactive()

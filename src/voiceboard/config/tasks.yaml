@@ -86,6 +86,7 @@ persona_conversation_task:
     
     Persona Name: {selected_persona_name}
     User Message: "{user_message}"
+    Startup Context: {startup_idea}
     
     Use the researched voice profile to challenge assumptions, identify potential 
     failures, and ask the tough questions this persona is known for asking.

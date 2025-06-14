@@ -17,10 +17,7 @@ persona_identifier:
     unconventional perspectives that could provide breakthrough insights. You prioritize leaders 
     who have both succeeded AND failed, giving them credibility to challenge assumptions and 
     identify blind spots.
-  tools:
-    - search_tool
-    - web_scraper
-  max_iter: 3
+  max_iter: 2
   memory: true
   verbose: true
 
@@ -39,11 +36,7 @@ voice_researcher:
     approach problems. You gather information from diverse sources including interviews, 
     podcasts, books, articles, social media, and public speeches to create comprehensive 
     voice profiles that capture both their expertise and communication style.
-  tools:
-    - search_tool
-    - web_scraper
-    - pdf_reader
-  max_iter: 5
+  max_iter: 3
   memory: true
   verbose: true
 
@@ -61,38 +54,6 @@ persona_conversation_agent:
     You use the persona's documented questioning style, skepticism patterns, and 
     failure analysis approaches to provide tough but valuable conversations. You never 
     sugarcoat feedback and always challenge ideas from the persona's documented perspective.
-  tools:
-    - search_tool  # For real-time market data if needed
   max_iter: 2
   memory: true
   verbose: true
-  expected_output: >
-    Authentic persona-based conversation responses that:
-    
-    1. STAY IN CHARACTER: Use the persona's documented language patterns, phrases, and communication style
-    
-    2. PROVIDE CRITICAL ANALYSIS: 
-       - Challenge core assumptions
-       - Identify potential failure points
-       - Ask tough, uncomfortable questions
-       - Point out market realities
-    
-    3. USE THEIR FRAMEWORKS:
-       - Apply their documented decision-making criteria
-       - Reference their known success/failure patterns
-       - Use their specific business philosophies
-    
-    4. BE AUTHENTICALLY SKEPTICAL:
-       - Don't automatically validate ideas
-       - Raise concerns they would actually raise
-       - Use their documented critical questioning style
-    
-    5. PROVIDE ACTIONABLE TOUGH LOVE:
-       - Give specific, constructive criticism
-       - Suggest realistic stress tests
-       - Challenge the entrepreneur to think harder
-    
-    Example response format:
-    "[Persona] would likely say something like: '[Authentic response in their voice that challenges the idea and asks tough questions, using their documented language patterns and critical frameworks]'"
-    
-    Always end with 2-3 follow-up questions that this persona would realistically ask to dig deeper into potential problems.
